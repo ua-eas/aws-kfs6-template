@@ -1,0 +1,1077 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "KFS OpsWorks Stack - Development (dev, tst, trn, etc)",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Application Information"
+          },
+          "Parameters": [
+            "EnvAppName",
+            "AppSlug",
+            "EnvSlug"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Load Balancer Settings"
+          },
+          "Parameters": [
+            "HostedZoneName",
+            "SSLCertName",
+            "LBSubnetA",
+            "LBSubnetB"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Instance Settings"
+          },
+          "Parameters": [
+            "InstanceType",
+            "KeyName",
+            "VPCID",
+            "AppSubnetA",
+            "AppSubnetB",
+            "CustomCookbooksSource",
+            "DBRestoreSnapshotName"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Application Settings"
+          },
+          "Parameters": [
+            "AppDockerImage",
+            "AppBaseURL",
+            "AppDBName",
+            "AppDBHostname",
+            "AppDBServicename",
+            "AppDBUsername",
+            "AppDBPassword",
+            "AppKeystorePassword",
+            "AppKeystoreEncryptionKey",
+            "AppB2BPurchaseOrderPassword",
+            "AppB2BShoppingPassword",
+            "AppLdapUsername",
+            "AppLdapPassword",
+            "AppNewRelicKey",
+            "AppS3ResourceBucket"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Tags"
+          },
+          "Parameters": [
+            "TagOwner",
+            "TagNetid",
+            "TagProjectName"
+          ]
+        }
+      ],
+      "ParameterLabels": {
+        "EnvAppName": {
+          "default": "Application Name:"
+        },
+        "AppSlug": {
+          "default": "Application Slug:"
+        },
+        "EnvSlug": {
+          "default": "Environment Slug:"
+        },
+        "LBSubnetA": {
+          "default": "Load Balancer Subnet A:"
+        },
+        "LBSubnetB": {
+          "default": "Load Balancer Subnet B:"
+        },
+        "HostedZoneName": {
+          "default": "Route53 DNS Zone:"
+        },
+        "AppSubnetA": {
+          "default": "App Instance Subnet A:"
+        },
+        "AppSubnetB": {
+          "default": "App Instance Subnet B:"
+        },
+        "DBRestoreSnapshotName": {
+          "default": "Database Restore Snapshot:"
+        },
+        "AppDockerImage": {
+          "default": "Docker Image"
+        },
+        "AppBaseURL": {
+          "default": "Base URL"
+        },
+        "AppDBUsername": {
+          "default": "DB Username"
+        },
+        "AppDBPassword": {
+          "default": "DB Password"
+        },
+        "AppKeystorePassword": {
+          "default": "Keystore Password"
+        },
+        "AppKeystoreEncryptionKey": {
+          "default": "Keystore Encryption Key"
+        },
+        "AppB2BPurchaseOrderPassword": {
+          "default": "B2B PO Password"
+        },
+        "AppB2BShoppingPassword": {
+          "default": "B2B Shopping Password"
+        },
+        "AppLdapUsername": {
+          "default": "EDS LDAP Username"
+        },
+        "AppLdapPassword": {
+          "default": "EDS LDAP Password"
+        },
+        "AppNewRelicKey": {
+          "default": "New Relic Key"
+        },
+        "AppS3ResourceBucket": {
+          "default": "S3 Resource Bucket"
+        }
+      }
+    }
+  },
+  "Parameters": {
+    "EnvAppName": {
+      "MinLength": "3",
+      "Type": "String",
+      "Description": "Full Application name, ie 'Kuali Financials'"
+    },
+    "EnvSlug": {
+      "MinLength": "2",
+      "Type": "String",
+      "Description": "Short environment slug, ie 'dev'. Lowercase letters, numbers and dashes only",
+      "AllowedPattern": "[a-z0-9]*"
+    },
+    "AppSlug": {
+      "MinLength": "3",
+      "Type": "String",
+      "Description": "Short application slug, ie 'kfs'. Lowercase letters, numbers and dashes only",
+      "AllowedPattern": "[a-z0-9-]*"
+    },
+    "VPCID": {
+      "Description": "Target VPC",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "AppSubnetA": {
+      "Description": "Application Subnet for Zone A",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "AppSubnetB": {
+      "Description": "Application Subnet for Zone B",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "SSLCertName": {
+      "Description": "SSL Certificate Name as uploaded",
+      "Type": "String"
+    },
+    "LBSubnetA": {
+      "Description": "Load Balancer Subnet for Zone A",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "LBSubnetB": {
+      "Description": "Load Balancer Subnet for Zone B",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "HostedZoneName": {
+      "MinLength": "3",
+      "Type": "String",
+      "Description": "Name of Route53 Hosted Zone: ie 'aws.arizona.edu'"
+    },
+    "KeyName": {
+      "Description": "Amazon EC2 Key Pair",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "CustomCookbooksSource": {
+      "Description": "URL to S3 cookbooks, ie 'https://s3.amazonaws.com/edu-arizona-pilots-eas/cookbooks.tar.gz'",
+      "Default": "https://s3-us-west-2.amazonaws.com/edu-arizona-pilots-eas/financials/kfs-cookbooks.tar.gz",
+      "Type": "String"
+    },
+    "InstanceType": {
+      "Description": "EC2 Instance Type",
+      "Type": "String",
+      "Default": "m4.large"
+    },
+    "DBRestoreSnapshotName": {
+      "Description": "RDS Snapshot Name to restore from",
+      "Type": "String"
+    },
+    "AppDockerImage": {
+      "Description": "Docker Image, i.e.: easksd/kfs6:dev",
+      "Type": "String"
+    },
+    "AppDockerAccessKey": {
+      "Description": "ie: ABCDEFG",
+      "Type": "String"
+    },
+    "AppDockerSecretKey": {
+      "Description": "AWS Secret Access Key",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppBaseURL": {
+      "Description": "Base Application URL: i.e.: https://ka-foo.mosiac.arizona.edu/",
+      "Type": "String"
+    },
+    "AppDBName": {
+      "Description": "AWS Database Name",
+      "Type": "String"
+    },
+    "AppDBHostname": {
+      "Description": "Database Host Name",
+      "Type": "String"
+    },
+    "AppDBServicename": {
+      "Description": "Database Service Name",
+      "Type": "String"
+    },
+    "AppDBUsername": {
+      "Description": "Database Username",
+      "Type": "String"
+    },
+    "AppDBPassword": {
+      "Description": "Database Password",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppKeystorePassword": {
+      "Description": "Rice Key Store Password",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppKeystoreEncryptionKey": {
+      "Description": "Rice Key Store Encryption Key",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppB2BPurchaseOrderPassword": {
+      "Description": "B2B Purchase Order Password",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppB2BShoppingPassword": {
+      "Description": "B2B Shopping Password",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppLdapUsername": {
+      "Description": "EDS LDAP Username",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppLdapPassword": {
+      "Description": "EDS LDAP Password",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppNewRelicKey": {
+      "Description": "NewRelic License Key",
+      "Type": "String",
+      "NoEcho": "true"
+    },
+    "AppS3ResourceBucket": {
+      "Description": "S3 Bucket containing /security and /classes folders. Just the bucket name, not a full arn.",
+      "Type": "String"
+    },
+    "TagOwner": {
+      "Description": "Name of the Owner of this resource (Full Name)",
+      "Type": "String"
+    },
+    "TagNetid": {
+      "Description": "UA NetID of responsible person",
+      "Type": "String"
+    },
+    "TagProjectName": {
+      "Description": "Name of the Project this is for, or JIRA ticket for more info",
+      "Type": "String"
+    }
+  },
+  "Mappings": {
+    "AccountTemplateBucketMap": {
+      "998687558142": {
+        "DefaultZone": "https://s3.amazonaws.com/cloudformation-templates.aws-pilots.arizona.edu"
+      },
+      "760232551367": {
+        "DefaultZone": "https://s3.amazonaws.com/cloudformation-templates.aws.arizona.edu"
+      }
+    }
+  },
+  "Resources": {
+    "EnvApplicationLayer": {
+      "Type": "AWS::OpsWorks::Layer",
+      "Properties": {
+        "Name": "KFS",
+        "Shortname": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "AppSlug"
+              },
+              {
+                "Ref": "EnvSlug"
+              },
+              "instance-"
+            ]
+          ]
+        },
+        "Type": "custom",
+        "AutoAssignElasticIps": "false",
+        "AutoAssignPublicIps": "false",
+        "CustomRecipes": {
+          "Setup": [
+            "ecs-docker::docker_install"
+          ],
+          "Deploy": [
+            "kfs::install_configs",
+            "ecs-docker::docker_login_ecr",
+            "ecs-docker::docker_pull_deploy"
+          ]
+        },
+        "CustomSecurityGroupIds": [
+          {
+            "Ref": "InstanceSecurityGroup"
+          }
+        ],
+        "EnableAutoHealing": "false",
+        "StackId": {
+          "Ref": "EnvStack"
+        }
+      }
+    },
+    "EnvApplicationLayerLoadBalancerAttachment": {
+      "Type": "AWS::OpsWorks::ElasticLoadBalancerAttachment",
+      "Properties": {
+        "ElasticLoadBalancerName": {
+          "Ref": "EnvApplicationLayerLoadBalancer"
+        },
+        "LayerId": {
+          "Ref": "EnvApplicationLayer"
+        }
+      }
+    },
+    "KFSApp": {
+      "Type": "AWS::OpsWorks::App",
+      "Properties": {
+        "AppSource": {
+          "Type": "other"
+        },
+        "Name": {
+          "Ref": "EnvAppName"
+        },
+        "Shortname": {
+          "Ref": "AppSlug"
+        },
+        "StackId": {
+          "Ref": "EnvStack"
+        },
+        "Type": "other",
+        "Environment": [
+          {
+            "Key": "layer",
+            "Value": {
+              "Ref": "EnvAppName"
+            }
+          },
+          {
+            "Key": "docker_repository_access_key",
+            "Value": {
+              "Ref": "AppDockerAccessKey"
+            }
+          },
+          {
+            "Key": "docker_repository_secret_key",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppDockerSecretKey"
+            }
+          },
+          {
+            "Key": "docker_container",
+            "Value": {
+              "Ref": "AppDockerImage"
+            }
+          },
+          {
+            "Key": "docker_ports",
+            "Value": "0.0.0.0:80:8080,0.0.0.0:8444:8444"
+          },
+          {
+            "Key": "docker_run_cmd",
+            "Value": "/usr/local/bin/tomcat-start"
+          },
+          {
+            "Key": "docker_volumes",
+            "Value": "/kuali-configs/configuration:/configuration:ro,/kuali-configs/security:/security:ro,/tmp:/logs,/tmp:/transactional"
+          },
+          {
+            "Key": "KFS_ENV_NAME",
+            "Value": {
+              "Ref": "EnvSlug"
+            }
+          },
+          {
+            "Key": "base_url",
+            "Value": {
+              "Ref": "AppBaseURL"
+            }
+          },
+          {
+            "Key": "db_host",
+            "Value": {
+              "Ref": "AppDBHostname"
+            }
+          },
+          {
+            "Key": "db_service_name",
+            "Value": {
+              "Ref": "AppDBServicename"
+            }
+          },
+          {
+            "Key": "db_username",
+            "Value": {
+              "Ref": "AppDBUsername"
+            }
+          },
+          {
+            "Key": "db_password",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppDBPassword"
+            }
+          },
+          {
+            "Key": "keystore_alias",
+            "Value": "rice"
+          },
+          {
+            "Key": "keystore_password",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppKeystorePassword"
+            }
+          },
+          {
+            "Key": "encryption_key",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppKeystoreEncryptionKey"
+            }
+          },
+          {
+            "Key": "b2b_po_identity",
+            "Value": "KualiDemo"
+          },
+          {
+            "Key": "b2b_po_password",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppB2BPurchaseOrderPassword"
+            }
+          },
+          {
+            "Key": "b2b_shop_identity",
+            "Value": "KualiDemo"
+          },
+          {
+            "Key": "b2b_shop_password",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppB2BShoppingPassword"
+            }
+          },
+          {
+            "Key": "ldap_username",
+            "Value": {
+              "Ref": "AppLdapUsername"
+            }
+          },
+          {
+            "Key": "ldap_password",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppLdapPassword"
+            }
+          },
+          {
+            "Key": "ldap_url",
+            "Value": "ldaps://eds.arizona.edu:636"
+          },
+          {
+            "Key": "ldap_base",
+            "Value": "ou=People,dc=eds,dc=arizona,dc=edu"
+          },
+          {
+            "Key": "newrelic_licence_key",
+            "Secure": true,
+            "Value": {
+              "Ref": "AppNewRelicKey"
+            }
+          },
+          {
+            "Key": "s3resource_bucket",
+            "Value": {
+              "Ref": "AppS3ResourceBucket"
+            }
+          }
+        ]
+      }
+    },
+    "AppInstanceZoneA": {
+      "Type": "AWS::OpsWorks::Instance",
+      "Properties": {
+        "InstallUpdatesOnBoot": true,
+        "StackId": {
+          "Ref": "EnvStack"
+        },
+        "LayerIds": [
+          {
+            "Ref": "EnvApplicationLayer"
+          }
+        ],
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SubnetId": {
+          "Ref": "AppSubnetA"
+        },
+        "SshKeyName": {
+          "Ref": "KeyName"
+        }
+      }
+    },
+    "EnvApplicationLayerLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Scheme": "internet-facing",
+        "ConnectionSettings": {
+          "IdleTimeout": "300"
+        },
+        "HealthCheck": {
+          "HealthyThreshold": "5",
+          "Interval": "60",
+          "Target": "TCP:80",
+          "Timeout": "10",
+          "UnhealthyThreshold": "3"
+        },
+        "LBCookieStickinessPolicy": [
+          {
+            "CookieExpirationPeriod": "28800",
+            "PolicyName": "DefaultSessionTimeout"
+          }
+        ],
+        "Listeners": [
+          {
+            "LoadBalancerPort": "443",
+            "Protocol": "HTTPS",
+            "InstancePort": "80",
+            "InstanceProtocol": "HTTP",
+            "PolicyNames": [
+              "DefaultSessionTimeout"
+            ],
+            "SSLCertificateId": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:aws:iam::",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":server-certificate/",
+                  {
+                    "Ref": "SSLCertName"
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "LoadBalancerName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "AppSlug"
+              },
+              {
+                "Ref": "EnvSlug"
+              },
+              "app-lb"
+            ]
+          ]
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "LoadBalancerSecurityGroup"
+          }
+        ],
+        "Subnets": [
+          {
+            "Ref": "LBSubnetA"
+          },
+          {
+            "Ref": "LBSubnetB"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "AppSlug"
+                  },
+                  {
+                    "Ref": "EnvSlug"
+                  },
+                  "-lb"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "owner",
+            "Value": {
+              "Ref": "TagOwner"
+            }
+          },
+          {
+            "Key": "netid",
+            "Value": {
+              "Ref": "TagNetid"
+            }
+          },
+          {
+            "Key": "projectname",
+            "Value": {
+              "Ref": "TagProjectName"
+            }
+          }
+        ]
+      }
+    },
+    "EnvStack": {
+      "Type": "AWS::OpsWorks::Stack",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            " ",
+            [
+              {
+                "Ref": "EnvAppName"
+              },
+              {
+                "Ref": "EnvSlug"
+              }
+            ]
+          ]
+        },
+        "ConfigurationManager": {
+          "Name": "Chef",
+          "Version": "12"
+        },
+        "CustomCookbooksSource": {
+          "Type": "s3",
+          "Url": {
+            "Ref": "CustomCookbooksSource"
+          }
+        },
+        "ServiceRoleArn": {
+          "Fn::GetAtt": [
+            "EnvServiceRole",
+            "Arn"
+          ]
+        },
+        "DefaultInstanceProfileArn": {
+          "Fn::GetAtt": [
+            "EnvInstanceProfile",
+            "Arn"
+          ]
+        },
+        "DefaultOs": "Amazon Linux 2016.03",
+        "DefaultSshKeyName": {
+          "Ref": "KeyName"
+        },
+        "DefaultRootDeviceType": "ebs",
+        "DefaultSubnetId": {
+          "Ref": "AppSubnetA"
+        },
+        "HostnameTheme": "Layer_Dependent",
+        "UseCustomCookbooks": "true",
+        "VpcId": {
+          "Ref": "VPCID"
+        }
+      }
+    },
+    "EnvServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "opsworks.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "opsworks-service",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "ec2:*",
+                    "iam:PassRole",
+                    "cloudwatch:GetMetricStatistics",
+                    "elasticloadbalancing:*",
+                    "rds:*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "*"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EnvInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "AppSlug"
+                  },
+                  {
+                    "Ref": "EnvSlug"
+                  },
+                  "s3policy"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "Stmt1452033379000",
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:ListBucket"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Ref": "AppS3ResourceBucket"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EnvInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "EnvInstanceRole"
+          }
+        ]
+      }
+    },
+    "InstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow Load Balancer and SSH to client host",
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "SourceSecurityGroupId": {
+              "Ref": "LoadBalancerSecurityGroup"
+            }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8080",
+            "ToPort": "8080",
+            "SourceSecurityGroupId": {
+              "Ref": "LoadBalancerSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "AppSlug"
+                  },
+                  {
+                    "Ref": "EnvSlug"
+                  },
+                  "instance-sg"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "owner",
+            "Value": {
+              "Ref": "TagOwner"
+            }
+          },
+          {
+            "Key": "netid",
+            "Value": {
+              "Ref": "TagNetid"
+            }
+          },
+          {
+            "Key": "projectname",
+            "Value": {
+              "Ref": "TagProjectName"
+            }
+          }
+        ]
+      }
+    },
+    "LoadBalancerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow web traffic to the Load Balancer",
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8080",
+            "ToPort": "8080",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "AppSlug"
+                  },
+                  {
+                    "Ref": "EnvSlug"
+                  },
+                  "load-balancer-sg"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "owner",
+            "Value": {
+              "Ref": "TagOwner"
+            }
+          },
+          {
+            "Key": "netid",
+            "Value": {
+              "Ref": "TagNetid"
+            }
+          },
+          {
+            "Key": "projectname",
+            "Value": {
+              "Ref": "TagProjectName"
+            }
+          }
+        ]
+      }
+    },
+    "DBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow DB traffic from Application Instances",
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "1521",
+            "ToPort": "1521",
+            "SourceSecurityGroupId": {
+              "Ref": "InstanceSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "AppSlug"
+                  },
+                  {
+                    "Ref": "EnvSlug"
+                  },
+                  "database-sg"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "owner",
+            "Value": {
+              "Ref": "TagOwner"
+            }
+          },
+          {
+            "Key": "netid",
+            "Value": {
+              "Ref": "TagNetid"
+            }
+          },
+          {
+            "Key": "projectname",
+            "Value": {
+              "Ref": "TagProjectName"
+            }
+          }
+        ]
+      }
+    },
+    "AppDnsRecord": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "HostedZoneName"
+              },
+              "."
+            ]
+          ]
+        },
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AppSlug"
+              },
+              "-",
+              {
+                "Ref": "EnvSlug"
+              },
+              ".",
+              {
+                "Ref": "HostedZoneName"
+              },
+              "."
+            ]
+          ]
+        },
+        "Type": "CNAME",
+        "TTL": "900",
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "EnvApplicationLayerLoadBalancer",
+              "DNSName"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
